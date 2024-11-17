@@ -1,0 +1,28 @@
+[
+    {
+        "hyperparams": {
+            "lr": 0.1,
+            "optimizer": "adam",
+            "batch_size": 32,
+            "gradient_accumulation_steps": 2,
+            "clip_grad_norm": null
+        },
+        "status": "success",
+        "elapsed_time": 180.448542,
+        "start_time": "2024-11-16 00:22:53",
+        "end_time": "2024-11-16 00:25:53"
+    },
+    {
+        "hyperparams": {
+            "lr": 0.1,
+            "optimizer": "adam",
+            "batch_size": 32,
+            "gradient_accumulation_steps": 2,
+            "clip_grad_norm": null
+        },
+        "status": "success",
+        "elapsed_time": 181.271131,
+        "start_time": "2024-11-16 00:28:24",
+        "end_time": "2024-11-16 00:31:25"
+    }
+]

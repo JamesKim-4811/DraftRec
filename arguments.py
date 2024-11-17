@@ -101,7 +101,9 @@ class Parser:
         # evaluation #
         parser.add_argument('--metric_ks', nargs='+', type=int, help='list of k for NDCG@k and HR@k')
         parser.add_argument('--best_metric', type=str, help='This metric will be used to compare and determine the best model')
-        
+        # gradient accumulation #
+        parser.add_argument('--gradient_accumulation_steps', type=int, default=1, help='Number of steps to accumulate gradients before updating weights')
+
         args = parser.parse_known_args(self.sys_argv)[0]
         return vars(args)
 

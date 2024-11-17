@@ -32,10 +32,13 @@ class MatchTrainer(BaseTrainer):
     def calculate_metrics(self, batch):
         args = self.args
         metrics = {}
+
         pi, v = self.model(batch)
+
         pi = pi.cpu().numpy()
+
         v = F.sigmoid(v).cpu().numpy().flatten()
-        
+
         pi_true = batch['target_champion'].cpu().numpy()
         pi_true = np.eye(args.num_champions)[pi_true].squeeze(1)
         v_true = batch['outcome'].cpu().numpy().flatten()
@@ -45,8 +48,11 @@ class MatchTrainer(BaseTrainer):
         pi_true = pi_true[~is_draft_finished]
         
         rec_metrics = get_recommendation_metrics_for_ks(pi, pi_true, args.metric_ks)
+
         win_metrics = get_win_prediction_metrics(v, v_true, is_draft_finished)
+        
         metrics.update(rec_metrics)
         metrics.update(win_metrics)
+
         
         return metrics

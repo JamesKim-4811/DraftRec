@@ -86,13 +86,12 @@ class BaseTrainer(metaclass=ABCMeta):
         val_log_data = self.validate(mode='val')
         val_log_data['epoch'] = 0
         self.logger.log_val(val_log_data)
-        
         for epoch in range(1, self.num_epochs+1):
             # train
             train_log_data = self.train_one_epoch()
             train_log_data['epoch'] = epoch
             self.logger.log_train(train_log_data)
-            
+
             # validation
             val_log_data = self.validate(mode='val')
             val_log_data['epoch'] = epoch
@@ -119,33 +118,38 @@ class BaseTrainer(metaclass=ABCMeta):
 
     def train_one_epoch(self):
         average_meter_set = AverageMeterSet()
+
         self.model.train()
-        for batch in tqdm(self.train_loader):
+        for step, batch in enumerate(tqdm(self.train_loader)):
 
             batch_size = next(iter(batch.values())).size(0)
-            # Need to send to cuda before forwarding in the model.
             batch = {k:v.to(self.device) for k, v in batch.items()}
 
-            self.optimizer.zero_grad()
+            self.optimizer.zero_grad()  # Zero the gradients only once per accumulation
+
             loss, extra_metrics = self.calculate_loss(batch)
             average_meter_set.update('loss', loss.item())
             for k, v in extra_metrics.items():
                 average_meter_set.update(k, v[0], n=v[1])
             
             loss.backward()
-            if self.clip_grad_norm is not None:
-                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_grad_norm)
-            self.optimizer.step()
-            self.steps += 1
-            
-            # log the training information from the training process
+
+            # Perform optimizer step every `gradient_accumulation_steps` mini-batches
+            if (step + 1) % self.args.gradient_accumulation_steps == 0 or (step + 1) == len(self.train_loader):
+                if self.clip_grad_norm is not None:
+                    torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.clip_grad_norm)
+                self.optimizer.step()  # Update the model weights
+
+            # Log training data
             log_data = {'step': self.steps}
             log_data.update(average_meter_set.averages())
             self.logger.log_train(log_data)
+
+            self.steps += 1
             
         log_data = {'step': self.steps}
         log_data.update(average_meter_set.averages())
-        
+
         return log_data
 
     def validate(self, mode):
@@ -157,16 +161,27 @@ class BaseTrainer(metaclass=ABCMeta):
             raise ValueError
 
         average_meter_set = AverageMeterSet()
+
         self.model.eval()
+        count = 0
         with torch.no_grad():
-            for batch in tqdm(loader):
+            progress_bar = tqdm(loader, desc=f"Validating ({mode})", unit="batch")
+            for batch in progress_bar:
+                count += 1
                 batch = {k:v.to(self.device) for k, v in batch.items()}
                 metrics = self.calculate_metrics(batch)
-                
+                # update average meter
                 for k, v in metrics.items():
                     average_meter_set.update(k, v[0], n=v[1])
+                
+                # update tqdm progress bar 
+                progress_bar.set_postfix({
+                'Batch': count,
+                **{f"Metric_{k}": v[0] for k, v in metrics.items()}
+                })
 
         log_data = {'step': self.steps}
         log_data.update(average_meter_set.averages())
+
 
         return log_data

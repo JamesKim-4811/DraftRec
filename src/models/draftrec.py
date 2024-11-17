@@ -82,7 +82,8 @@ class DraftRec(BaseModel):
         """
         B, T, S, ST = batch['user_stats'].shape
         H = self.args.hidden_units
-        
+    
+
         # user_embedding: (B, T, S, H)
         user_embedding = self.champion_embedding(batch['user_champions'])
         user_embedding += self.role_embedding(batch['user_roles'])
@@ -119,7 +120,8 @@ class DraftRec(BaseModel):
         turn_idx = copy.deepcopy(batch['turn'])
         # for the full-match data, fill the current_user_embedding with any value 
         # (will be neither trained nor evaluated)
-        turn_idx[turn_idx > T] = 1
+        # turn_idx[turn_idx > T] = 1
+        turn_idx = torch.where(turn_idx > T, torch.tensor(1, device=turn_idx.device), turn_idx)
         turn_idx = turn_idx - 1
 
         # repeat index to gather 
