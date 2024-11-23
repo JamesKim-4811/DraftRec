@@ -5,7 +5,6 @@ import itertools
 hyperparams_grid = {
     'lr': [0.1, 0.01, 0.001, 0.0001],
     'optimizer': ['adam', 'sgd'],
-    'batch_size': [32, 64, 128, 256],
     'gradient_accumulation_steps': [2, 4, 6, 8],
     'clip_grad_norm': [None, 3, 5],
 }
